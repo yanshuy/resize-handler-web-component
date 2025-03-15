@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Discord</title>
+    </head>
+    <body>
+        <div
+            class="flex relative text-zinc-200 min-h-screen overflow-auto bg-(--main-color)"
+        >
+            <nav class="bg-zinc-900 basis-18 flex-grow-0 flex-shrink-0"></nav>
+            <nav class="bg-zinc-800"></nav>
+
+            <panel-resize-handler
+                resize="left"
+                default-width="256"
+                min-width="150"
+                max-width-percent="30"
+            ></panel-resize-handler>
+
+            <div class="flex-1 h-screen">
+                <nav
+                    class="flex items-center border-b border-b-zinc-600 p-3 h-[50px]"
+                >
+                    <span class="ml-1 mr-2 text-zinc-400">
+                        <svg
+                            x="0"
+                            y="0"
+                            class="icon__9293f"
+                            aria-hidden="true"
+                            role="img"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                fill="currentColor"
+                                d="M13 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+                                class=""
+                            ></path>
+                            <path
+                                fill="currentColor"
+                                d="M3 5v-.75C3 3.56 3.56 3 4.25 3s1.24.56 1.33 1.25C6.12 8.65 9.46 12 13 12h1a8 8 0 0 1 8 8 2 2 0 0 1-2 2 .21.21 0 0 1-.2-.15 7.65 7.65 0 0 0-1.32-2.3c-.15-.2-.42-.06-.39.17l.25 2c.02.15-.1.28-.25.28H9a2 2 0 0 1-2-2v-2.22c0-1.57-.67-3.05-1.53-4.37A15.85 15.85 0 0 1 3 5Z"
+                                class=""
+                            ></path>
+                        </svg>
+                    </span>
+
+                    <h2>Friends</h2>
+                    <div class="w-px h-6 bg-zinc-600 mx-4"></div>
+                    <div class="flex gap-2 h-6 items-center">
+                        <button class="hover:bg-zinc-700 px-2 rounded-md">
+                            Online
+                        </button>
+                    </div>
+                </nav>
+                <div class="flex">
+                    <main
+                        class="scrollable overflow-y-auto max-h-[calc(100vh-50px-12px)] flex-1 m-1.5"
+                    >
+                        <div class="min-h-[200vh]"></div>
+                    </main>
+
+                    <panel-resize-handler
+                        resize="right"
+                        default-width="256"
+                        min-width="150"
+                        max-width-percent="30"
+                        collapsable="true"
+                    ></panel-resize-handler>
+
+                    <aside></aside>
+                </div>
+            </div>
+        </div>
+
+        <script type="module" src="/src/main.ts"></script>
+    </body>
+</html>

@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+:root {
+    --main-color: #313338;
+    --scrollbar-track-color: color-mix(
+        in oklab,
+        var(--color-zinc-800) 60%,
+        transparent
+    );
+    --scrollbar-thumb-color: color-mix(
+        in oklab,
+        var(--color-zinc-900) 70%,
+        transparent
+    );
+    --resize-handler-hover-color: var(--color-zinc-500);
+}
+
+/* panel-resize-handler {
+    background: red;
+} */
+
+@layer base {
+    .scrollable::-webkit-scrollbar {
+        width: 0.4rem;
+    }
+    .scrollable::-webkit-scrollbar-track {
+        background: var(--scrollbar-track-color);
+        border-radius: 1rem;
+    }
+    .scrollable::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb-color);
+        border-radius: 1rem;
+    }
+
+    .scrollable__hidden::-webkit-scrollbar {
+        width: 0.4rem;
+    }
+    .scrollable__hidden::-webkit-scrollbar-thumb {
+        background: transparent;
+        border-radius: 1rem;
+    }
+
+    .scrollable__hidden::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .scrollable__hidden:hover::-webkit-scrollbar-thumb {
+        background: var(--color-zinc-800);
+    }
+}
