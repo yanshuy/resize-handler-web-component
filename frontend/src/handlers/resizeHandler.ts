@@ -1,4 +1,4 @@
-import { throttle } from "../utils/throttle";
+import { html, throttle } from "../utils";
 
 /**
  * Panel resize handler component.
@@ -115,18 +115,18 @@ class PanelResizeHandler extends HTMLElement {
     render(): void {
         if (!this.shadowRoot) return;
 
-        this.shadowRoot.innerHTML = `
-        <style>
-          :host {
-            display: block;
-            width: 4px;
-            cursor: col-resize;
-            background-color: transparent;
-            transition: background-color 0.2s ease;
-            z-index: 10;
-          }
-        </style>
-      `;
+        this.shadowRoot.innerHTML = html`
+            <style>
+                :host {
+                    display: block;
+                    width: 4px;
+                    cursor: col-resize;
+                    background-color: transparent;
+                    transition: background-color 0.2s ease;
+                    z-index: 10;
+                }
+            </style>
+        `;
     }
 
     setupEventListeners(): void {
