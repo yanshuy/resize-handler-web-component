@@ -10,7 +10,7 @@ import { throttle } from "../utils/throttle";
  * @attr {number} min-width - Minimum width of sibling in pixels
  * @attr {number} initial-width - Starting width of sibling in pixels
  * @attr {number} max-width-percent - Maximum width of sibling as percentage of window
- * @attr {string} collapsable - ('true' or 'false')
+ * @attr collapsable - Whether the panel can be collapsed
  *
  * @cssprop --resize-handler-hover-color - Color when hovering over handler
  *
@@ -24,12 +24,13 @@ class PanelResizeHandler extends HTMLElement {
     private initialX: number = 0;
     private currentSiblingWidth: number = 0;
 
-    // Configuration all applies to the sibling element
-    private MIN_WIDTH: number = 150; // px
-    private MAX_WIDTH_PERCENT: number = 30; // % of window width
-    private DEFAULT_WIDTH: number = this.MIN_WIDTH;
-
+    // Configuration properties with defaults
+    private minWidth: number = 150; // px
+    private maxWidthPercent: number = 30; // % of window width
+    private defaultWidth: number = 150; // px - initialized to match minWidth
+    private resize: "left" | "right" | null = null;
     private isCollapsable: boolean = false;
+
     private isPanelCollapsed: boolean = false;
 
     constructor() {
@@ -45,29 +46,61 @@ class PanelResizeHandler extends HTMLElement {
         this.adjustPanelWidth = this.adjustPanelWidth.bind(this);
     }
 
-    // when element is added to DOM
     connectedCallback(): void {
+        this.initializeFromAttributes();
+
         this.render();
         this.setupEventListeners();
+        this.applyDefaultWidth();
         this.adjustPanelWidth();
 
-        const resize = this.getAttribute("resize");
+        window.addEventListener("resize", throttle(this.adjustPanelWidth, 100));
+    }
 
-        if (resize === "left" && this.previousElementSibling) {
-            (
-                this.previousElementSibling as HTMLElement
-            ).style.flexBasis = `${this.DEFAULT_WIDTH}px`;
-            console.log(
-                (this.previousElementSibling as HTMLElement).style.flexBasis
-            );
-        } else if (resize === "right" && this.nextElementSibling) {
-            (
-                this.nextElementSibling as HTMLElement
-            ).style.flexBasis = `${this.DEFAULT_WIDTH}px`;
+    private initializeFromAttributes(): void {
+        if (this.hasAttribute("min-width")) {
+            this.minWidth =
+                parseInt(this.getAttribute("min-width") || "") || 150;
         }
 
-        // Add resize listener
-        window.addEventListener("resize", throttle(this.adjustPanelWidth, 100));
+        if (this.hasAttribute("max-width-percent")) {
+            this.maxWidthPercent =
+                parseInt(this.getAttribute("max-width-percent") || "") || 30;
+        }
+
+        if (this.hasAttribute("initial-width")) {
+            this.defaultWidth =
+                parseInt(this.getAttribute("initial-width") || "") ||
+                this.minWidth;
+        }
+
+        const resizeAttr = this.getAttribute("resize");
+        if (resizeAttr === "left" || resizeAttr === "right") {
+            this.resize = resizeAttr;
+        } else if (resizeAttr !== null) {
+            console.error(
+                "Invalid value for resize attribute. Valid values are 'left' or 'right'."
+            );
+        }
+
+        this.isCollapsable = this.hasAttribute("collapsable");
+    }
+
+    private applyDefaultWidth(): void {
+        const targetElement = this.getTargetElement();
+        if (targetElement) {
+            targetElement.style.flexBasis = `${this.defaultWidth}px`;
+        }
+    }
+
+    // Get the target element based on resize direction
+    private getTargetElement(): HTMLElement | null {
+        if (this.resize === "left" && this.previousElementSibling) {
+            return this.previousElementSibling as HTMLElement;
+        } else if (this.resize === "right" && this.nextElementSibling) {
+            return this.nextElementSibling as HTMLElement;
+        }
+        return null;
     }
 
     // when element is removed from DOM
@@ -128,23 +161,15 @@ class PanelResizeHandler extends HTMLElement {
 
     handleMouseDown(e: MouseEvent): void {
         e.preventDefault();
-        const resize = this.getAttribute("resize");
+        const targetElement = this.getTargetElement();
+        if (!targetElement) return;
 
         this.setBgColor(this, this.COLOR_HOVER_BG);
         document.body.style.cursor = "col-resize";
 
         this.isDragging = true;
         this.initialX = e.clientX;
-
-        if (resize === "left" && this.previousElementSibling) {
-            this.currentSiblingWidth = (
-                this.previousElementSibling as HTMLElement
-            ).getBoundingClientRect().width;
-        } else if (resize === "right" && this.nextElementSibling) {
-            this.currentSiblingWidth = (
-                this.nextElementSibling as HTMLElement
-            ).getBoundingClientRect().width;
-        }
+        this.currentSiblingWidth = targetElement.getBoundingClientRect().width;
 
         document.addEventListener("mousemove", this.handleMouseMove);
         document.addEventListener("mouseup", this.handleMouseUp);
@@ -153,25 +178,19 @@ class PanelResizeHandler extends HTMLElement {
     handleMouseMove(e: MouseEvent): void {
         if (!this.isDragging) return;
 
-        const resize = this.getAttribute("resize");
-        let newWidth: number;
-        let targetElement: HTMLElement | null = null;
+        const targetElement = this.getTargetElement();
+        if (!targetElement) return;
 
-        if (resize === "left" && this.previousElementSibling) {
-            targetElement = this.previousElementSibling as HTMLElement;
+        let newWidth: number;
+
+        if (this.resize === "left") {
             newWidth = this.currentSiblingWidth + (e.clientX - this.initialX);
-        } else if (resize === "right" && this.nextElementSibling) {
-            targetElement = this.nextElementSibling as HTMLElement;
-            newWidth = this.currentSiblingWidth - (e.clientX - this.initialX);
         } else {
-            console.error(
-                "invalid attribute value \n valid attribute value for resize: left | right"
-            );
-            return;
+            newWidth = this.currentSiblingWidth - (e.clientX - this.initialX);
         }
 
         if (this.isCollapsable) {
-            if (newWidth <= this.MIN_WIDTH) {
+            if (newWidth <= this.minWidth) {
                 targetElement.style.display = "none";
                 this.isPanelCollapsed = true;
             }
@@ -181,11 +200,9 @@ class PanelResizeHandler extends HTMLElement {
             }
         }
 
-        if (!targetElement) return;
-
-        const maxWidth = window.innerWidth * (this.MAX_WIDTH_PERCENT / 100);
+        const maxWidth = window.innerWidth * (this.maxWidthPercent / 100);
         const clampedWidth = Math.max(
-            this.MIN_WIDTH,
+            this.minWidth,
             Math.min(newWidth, maxWidth)
         );
 
@@ -203,53 +220,26 @@ class PanelResizeHandler extends HTMLElement {
 
     // Adjust panel widths on window resize
     adjustPanelWidth(): void {
-        const maxWidth = window.innerWidth * (this.MAX_WIDTH_PERCENT / 100);
-        const resize = this.getAttribute("resize");
-        let targetElement: HTMLElement | null = null;
-
-        if (resize === "left" && this.previousElementSibling) {
-            targetElement = this.previousElementSibling as HTMLElement;
-        } else if (resize === "right" && this.nextElementSibling) {
-            targetElement = this.nextElementSibling as HTMLElement;
-        }
+        const maxWidth = window.innerWidth * (this.maxWidthPercent / 100);
+        const targetElement = this.getTargetElement();
 
         if (targetElement) {
             const currentWidth = targetElement.getBoundingClientRect().width;
-            if (currentWidth > maxWidth && maxWidth > this.MIN_WIDTH) {
+            if (currentWidth > maxWidth && maxWidth > this.minWidth) {
                 targetElement.style.setProperty("flex-basis", `${maxWidth}px`);
             }
         }
     }
 
-    // Observe attribute changes
     static get observedAttributes(): string[] {
-        return [
-            "min-width",
-            "max-width-percent",
-            "default-width",
-            "resize",
-            "collapsable",
-        ];
+        return [];
     }
 
-    // React to attribute changes
     attributeChangedCallback(
         name: string,
         oldValue: string,
         newValue: string
-    ): void {
-        if (name === "min-width") {
-            this.MIN_WIDTH = parseInt(newValue) || 150;
-        } else if (name === "max-width-percent") {
-            this.MAX_WIDTH_PERCENT = parseInt(newValue) || 30;
-        } else if (name === "default-width") {
-            this.DEFAULT_WIDTH = parseInt(newValue) || this.MIN_WIDTH;
-        } else if (name === "collapsable") {
-            this.isCollapsable =
-                newValue.toLowerCase() == "false" ? false : true;
-        }
-    }
+    ): void {}
 }
 
-// Register the web component
 customElements.define("panel-resize-handler", PanelResizeHandler);

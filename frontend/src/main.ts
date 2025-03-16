@@ -1,2 +1,2 @@
 import "./style.css";
-import "./handlers/resizeHandlers";
+import "./handlers/resizeHandler";
